@@ -164,13 +164,6 @@ typedef struct {
     u8 unk_08;
 } UnkStruct_ov16_02268FCC;
 
-typedef struct {
-    u8 unk_00;
-    s8 y;
-    s8 x;
-    u8 unk_03;
-} MenuCursor;
-
 typedef union {
     UnkStruct_ov16_02269668 val1;
     UnkStruct_ov16_02260C00 val2;
@@ -492,9 +485,9 @@ __attribute__((aligned(4))) static const u8 Unk_ov16_02270A08[NELEMS(Unk_ov16_02
     0x4
 };
 
-__attribute__((aligned(4))) static const u8 battleMenuButtonLayout[2][3] = {
-    { 0x0, 0x0, 0x0 },
-    { 0x1, 0x3, 0x2 }
+__attribute__((aligned(4))) static const u8 battleMenuButtonLayout[2][2] = {
+    { 0x0, 0x1 },
+    { 0x2, 0x3 }
 };
 
 static const TouchScreenRect Unk_ov16_02270214[] = {
@@ -619,7 +612,8 @@ __attribute__((aligned(4))) static const u8 Unk_ov16_022701C4[NELEMS(Unk_ov16_02
     0x4
 };
 
-static const UnkStruct_ov16_02270670 Unk_ov16_02270670[] = {  // Menu structures
+static const UnkStruct_ov16_02270670 Unk_ov16_02270670[] = {
+    // Menu structures
     {
         0x1C,
         0xF2,
@@ -1589,6 +1583,11 @@ void ov16_02269218(UnkStruct_ov16_02268A14 *param0)
     }
 }
 
+MenuCursor *BattleSystem_MenuGetCursor(UnkStruct_ov16_02268A14 *param0)
+{
+    return &(param0->cursor);
+}
+
 int BattleSystem_MenuInput(UnkStruct_ov16_02268A14 *param0)
 {
     int v0, v1, v2, v3;
@@ -1610,7 +1609,7 @@ int BattleSystem_MenuInput(UnkStruct_ov16_02268A14 *param0)
     } else {
         v1 = TouchScreen_CheckRectanglePressed(v4->unk_14);
 
-        if (v1 == 0xffffffff) {  // Nothing was selected with touch
+        if (v1 == 0xffffffff) { // Nothing was selected with touch
             v1 = BattleSystem_MenuKeys(param0);
             v5++;
         }
@@ -3794,18 +3793,18 @@ static int BattleSystem_MenuKeys(UnkStruct_ov16_02268A14 *param0)
         return 0xffffffff;
     }
 
-    if (cursor->unk_00 == 0) {  // Check if the cursor is inactive
+    if (cursor->unk_00 == 0) { // Check if the cursor is inactive
         if ((param0->unk_6C0 == 1) || (gSystem.pressedKeys & (PAD_BUTTON_A | PAD_BUTTON_B | PAD_BUTTON_X | PAD_BUTTON_Y | PAD_KEY_RIGHT | PAD_KEY_LEFT | PAD_KEY_UP | PAD_KEY_DOWN))) {
-            if (param0->unk_6C0 == 0) {  // If a key was pressed, play sfx
+            if (param0->unk_6C0 == 0) { // If a key was pressed, play sfx
                 Sound_PlayEffect(SEQ_SE_CONFIRM);
             }
 
-            cursor->unk_00 = 1;  // Activate the cursor
-            param0->unk_6C0 = 0;  // Unpress the key
+            cursor->unk_00 = 1; // Activate the cursor
+            param0->unk_6C0 = 0; // Unpress the key
             v1->unk_20(param0, 1);
         }
 
-        return 0xffffffff;
+        // return 0xffffffff;
     }
 
     return v1->unk_20(param0, 0);
@@ -3835,31 +3834,31 @@ static int BattleSystem_Cursor_Menu(UnkStruct_ov16_02268A14 *param0, int cursorH
 
     switch (param0->unk_66B) {
     case 6:
-    case 5:  // fight menus where bag, run and pokemon aren't available
+    case 5: // fight menus where bag, run and pokemon aren't available
         button = BattleSystem_MoveCursor(cursor, 1, 1, battleMenuButtonLayout[0]);
         break;
-    default:  // normal fight menu, with bag, run and pokemon
+    default: // normal fight menu, with bag, run and pokemon
         buttonId = battleMenuButtonLayout[cursor->y][cursor->x];
 
-        if ((buttonId == 3) && (gSystem.pressedKeys & PAD_KEY_UP)) {
+        /*if ((buttonId == 3) && (gSystem.pressedKeys & PAD_KEY_UP)) {
             (void)0;  // Do nothing if run is selected and up is pressed
-        } else {
-            button = BattleSystem_MoveCursor(cursor, 3, 2, battleMenuButtonLayout[0]);  // temporarily set button to the id of the new button
-
-            if ((button == 0) && (buttonId == 0)) {  // if fight is selected, and is still selected
-                if (gSystem.pressedKeys & PAD_KEY_LEFT) {  // Move to bag on the bottom row
-                    cursor->x = 0;
-                    cursor->y = 1;
-                    Sound_PlayEffect(SEQ_SE_CONFIRM);
-                    button = PAD_KEY_LEFT;
-                } else if (gSystem.pressedKeys & PAD_KEY_RIGHT) {  // Move to pokemon on the bottom row
-                    cursor->x = 2;
-                    cursor->y = 1;
-                    Sound_PlayEffect(SEQ_SE_CONFIRM);
-                    button = PAD_KEY_RIGHT;
-                }
-            }
-        }
+        } else {*/
+        button = BattleSystem_MoveCursor(cursor, 2, 2, battleMenuButtonLayout[0]); // temporarily set button to the id of the new button
+        /*
+                    if ((button == 0) && (buttonId == 0)) {  // if fight is selected, and is still selected
+                        if (gSystem.pressedKeys & PAD_KEY_LEFT) {  // Move to bag on the bottom row
+                            cursor->x = 0;
+                            cursor->y = 1;
+                            Sound_PlayEffect(SEQ_SE_CONFIRM);
+                            button = PAD_KEY_LEFT;
+                        } else if (gSystem.pressedKeys & PAD_KEY_RIGHT) {  // Move to pokemon on the bottom row
+                            cursor->x = 2;
+                            cursor->y = 1;
+                            Sound_PlayEffect(SEQ_SE_CONFIRM);
+                            button = PAD_KEY_RIGHT;
+                        }
+                    }
+                }*/
         break;
     }
 

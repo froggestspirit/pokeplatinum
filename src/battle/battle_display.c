@@ -14,6 +14,7 @@
 
 #include "battle/battle_anim_battler_context.h"
 #include "battle/battle_context.h"
+#include "battle/battle_cursor.h"
 #include "battle/battle_io.h"
 #include "battle/battle_lib.h"
 #include "battle/battle_message.h"
@@ -22,7 +23,6 @@
 #include "battle/ov16_0223B140.h"
 #include "battle/ov16_0223DF00.h"
 #include "battle/ov16_02264798.h"
-#include "battle/battle_cursor.h"
 #include "battle/party_gauge.h"
 #include "battle/struct_ov16_0224DDA8.h"
 #include "battle/struct_ov16_0225BFFC_decl.h"
@@ -2836,6 +2836,11 @@ static void ov16_022604C8(SysTask *param0, void *param1)
     battleType = BattleSystem_BattleType(v0->unk_00);
     v5 = BattleSystem_Partner(v0->unk_00, v0->unk_09);
 
+    BgConfig *bgl = BattleSystem_BGL(v0->unk_00);
+    Window *window1 = BattleSystem_Window(v0->unk_00, 1);
+    Window *window2 = BattleSystem_Window(v0->unk_00, 2);
+    PaletteData *paletteSys = BattleSystem_PaletteSys(v0->unk_00);
+
     if (v5 != v0->unk_09) {
         v6 = ov16_0223F35C(v0->unk_00, v5);
     } else {
@@ -2974,8 +2979,26 @@ static void ov16_022604C8(SysTask *param0, void *param1)
         }
 
         v0->unk_0A = 5;
+
+        G2_SetBG0Priority(1 + 1); // this is the background + 1; could do with a constant
+        Bg_SetPriority(BG_LAYER_MAIN_1, 1);
+        Bg_SetPriority(BG_LAYER_MAIN_2, 0);
+
+        BattleSystem_SetGaugePriority(v0->unk_00, 0 + 2); // gauge's default is 0
+
+        LoadStandardWindowTiles(bgl, 2, 1, 0, HEAP_ID_BATTLE);
+        PaletteData_LoadBufferFromFileStart(paletteSys, NARC_INDEX_GRAPHIC__PL_WINFRAME, GetStandardWindowPaletteNARCMember(), HEAP_ID_BATTLE, 0, 0x20, 8 * 0x10);
+        Window_Add(bgl, window1, 2, 0x13, 0x13, 12, 4, 11, (9 + 1));
+        Window_FillTilemap(window1, 0xFF);
+        Window_DrawStandardFrame(window1, 0, 1, 8);
+
         break;
-    case 5:
+    case 5: {
+        MessageLoader *v9;
+        BattleMessage v10;
+
+        v9 = BattleSystem_MessageLoader(v0->unk_00);
+
         if (gSystem.pressedKeys & PAD_BUTTON_START) {
             BattlerData *v14;
             int i;
@@ -2986,23 +3009,50 @@ static void ov16_022604C8(SysTask *param0, void *param1)
             }
         }
 
+        MenuCursor *cursor;
+        cursor = BattleSystem_MenuGetCursor(v2);
+        Window_FillRectWithColor(window1, 15, (cursor->x << 6), (cursor->y << 4), 8, 16);
+
         v0->unk_0C = BattleSystem_MenuInput(v2);
 
         if (v0->unk_0C != 0xffffffff) {
             v0->unk_0B = 10;
             Sound_PlayEffect(SEQ_SE_DP_DECIDE);
             v0->unk_0A = 6;
+
+            Window_EraseStandardFrame(window1, 0);
+            Window_Remove(window1);
+
+            G2_SetBG0Priority(1);
+            Bg_SetPriority(BG_LAYER_MAIN_1, 0);
+            Bg_SetPriority(BG_LAYER_MAIN_2, 1);
+
+            BattleSystem_SetGaugePriority(v0->unk_00, 0);
+        } else {
+            Window_DrawMenuCursor(window1, (cursor->x << 6), (cursor->y << 4));
+            Window_LoadTiles(window1);
+
+            v10.tags = 2;
+            v10.params[0] = v0->unk_09 | (v0->unk_23 << 8);
+            v10.id = 924;
+            BattleMessage_PrintToWindow(v0->unk_00, window1, v9, &v10, 8, 0, 0, 0, 0);
+            v10.id = 925;
+            BattleMessage_PrintToWindow(v0->unk_00, window1, v9, &v10, 72, 0, 0, 0, 0);
+            v10.id = 926;
+            BattleMessage_PrintToWindow(v0->unk_00, window1, v9, &v10, 8, 16, 0, 0, 0);
+            v10.id = 927;
+            BattleMessage_PrintToWindow(v0->unk_00, window1, v9, &v10, 72, 16, 0, 0, 0);
         }
-        break;
+    } break;
     case 6:
         if ((ov16_02269348(v2) == 1) || (v0->unk_0C == 1)) {
             switch (v0->unk_0C) {
-            case 1:  // Fight
+            case 1: // Fight
                 if (BattleSystem_BattleType(v0->unk_00) & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_PAL_PARK)) {
                     v0->unk_0A = 7;
                 }
                 break;
-            case 2: {  // Bag
+            case 2: { // Bag
                 NARC *v16 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_BG, HEAP_ID_BATTLE);
                 NARC *v17 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, HEAP_ID_BATTLE);
 
@@ -3014,7 +3064,7 @@ static void ov16_022604C8(SysTask *param0, void *param1)
                 NARC_dtor(v16);
                 NARC_dtor(v17);
             } break;
-            case 3: {  // Pokemon
+            case 3: { // Pokemon
                 NARC *v18 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_BG, HEAP_ID_BATTLE);
                 NARC *v19 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, HEAP_ID_BATTLE);
 
@@ -3026,7 +3076,7 @@ static void ov16_022604C8(SysTask *param0, void *param1)
                 NARC_dtor(v18);
                 NARC_dtor(v19);
             } break;
-            case 4: {  // Run
+            case 4: { // Run
                 NARC *v20 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_BG, HEAP_ID_BATTLE);
                 NARC *v21 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, HEAP_ID_BATTLE);
 

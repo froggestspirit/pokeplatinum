@@ -9,6 +9,13 @@
 #include "bg_window.h"
 #include "narc.h"
 
+typedef struct {
+    u8 unk_00;
+    s8 y;
+    s8 x;
+    u8 unk_03;
+} MenuCursor;
+
 void ov16_02268744(BgConfig *param0);
 void ov16_022687A0(BgConfig *param0);
 void *ov16_022687C8(NARC *param0, NARC *param1, BattleSystem *battleSys, int param3, u8 *param4);
@@ -21,6 +28,7 @@ void ov16_0226914C(UnkStruct_ov16_02268A14 *param0, const u8 *param1);
 void ov16_02269168(UnkStruct_ov16_02268A14 *param0, u8 param1[], u8 param2[]);
 void ov16_022691BC(UnkStruct_ov16_02268A14 *param0);
 void ov16_02269218(UnkStruct_ov16_02268A14 *param0);
+MenuCursor *BattleSystem_MenuGetCursor(UnkStruct_ov16_02268A14 *param0);
 int BattleSystem_MenuInput(UnkStruct_ov16_02268A14 *param0);
 BOOL ov16_02269348(UnkStruct_ov16_02268A14 *param0);
 int ov16_02269368(int param0, int param1);
