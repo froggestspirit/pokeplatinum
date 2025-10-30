@@ -14,6 +14,7 @@
 
 #include "battle/battle_anim_battler_context.h"
 #include "battle/battle_context.h"
+#include "battle/battle_cursor.h"
 #include "battle/battle_io.h"
 #include "battle/battle_lib.h"
 #include "battle/battle_message.h"
@@ -22,7 +23,6 @@
 #include "battle/ov16_0223B140.h"
 #include "battle/ov16_0223DF00.h"
 #include "battle/ov16_02264798.h"
-#include "battle/battle_cursor.h"
 #include "battle/party_gauge.h"
 #include "battle/struct_ov16_0224DDA8.h"
 #include "battle/struct_ov16_0225BFFC_decl.h"
@@ -2836,6 +2836,14 @@ static void ov16_022604C8(SysTask *param0, void *param1)
     battleType = BattleSystem_BattleType(v0->unk_00);
     v5 = BattleSystem_Partner(v0->unk_00, v0->unk_09);
 
+#ifdef SINGLE_SCREEN
+    GX_SetDispSelect(GX_DISP_SELECT_MAIN_SUB);
+    BgConfig *bgl = BattleSystem_BGL(v0->unk_00);
+    Window *window = BattleSystem_Window(v0->unk_00, 1);
+    PaletteData *paletteSys = BattleSystem_PaletteSys(v0->unk_00);
+    Strbuf *textMove;
+#endif
+
     if (v5 != v0->unk_09) {
         v6 = ov16_0223F35C(v0->unk_00, v5);
     } else {
@@ -2974,6 +2982,18 @@ static void ov16_022604C8(SysTask *param0, void *param1)
         }
 
         v0->unk_0A = 5;
+
+#ifdef SINGLE_SCREEN
+        G2_SetBG0Priority(2); // this is the background + 1; could do with a constant
+        Bg_SetPriority(BG_LAYER_MAIN_1, 1);
+        Bg_SetPriority(BG_LAYER_MAIN_2, 0);
+
+        LoadStandardWindowTiles(bgl, 2, 1, 0, HEAP_ID_BATTLE);
+        PaletteData_LoadBufferFromFileStart(paletteSys, NARC_INDEX_GRAPHIC__PL_WINFRAME, GetStandardWindowPaletteNARCMember(), HEAP_ID_BATTLE, 0, 0x20, 8 * 0x10);
+        Window_Add(bgl, window, 2, 0x13, 0x13, 12, 4, 11, (9 + 1));
+        Window_FillTilemap(window, 0xFF);
+        Window_DrawStandardFrame(window, 0, 1, 8);
+#endif
         break;
     case 5:
         if (gSystem.pressedKeys & PAD_BUTTON_START) {
@@ -2985,24 +3005,47 @@ static void ov16_022604C8(SysTask *param0, void *param1)
                 ov16_0226737C(&v14->healthbar);
             }
         }
-
+#ifdef SINGLE_SCREEN
+        MenuCursor *cursor;
+        cursor = BattleSystem_GetCursor(v2);
+        Window_FillRectWithColor(window, 15, (cursor->x << 6), (cursor->y << 4), 8, 16);
+#endif
         v0->unk_0C = BattleSystem_MenuInput(v2);
-
         if (v0->unk_0C != 0xffffffff) {
             v0->unk_0B = 10;
             Sound_PlayEffect(SEQ_SE_DP_DECIDE);
             v0->unk_0A = 6;
+#ifdef SINGLE_SCREEN
+        } else {
+            BattleMessage msg;
+            MessageLoader *msgLoader;
+            msgLoader = BattleSystem_MessageLoader(v0->unk_00);
+
+            Window_DrawMenuCursor(window, (cursor->x << 6), (cursor->y << 4));
+
+            msg.tags = 2;
+            msg.params[0] = v0->unk_09 | (v0->unk_23 << 8);
+            msg.id = 924;
+            BattleMessage_PrintToWindow(v0->unk_00, window, msgLoader, &msg, 8, 0, 0, 0, 0);
+            msg.id++;
+            BattleMessage_PrintToWindow(v0->unk_00, window, msgLoader, &msg, 72, 0, 0, 0, 0);
+            msg.id++;
+            BattleMessage_PrintToWindow(v0->unk_00, window, msgLoader, &msg, 8, 16, 0, 0, 0);
+            msg.id++;
+            BattleMessage_PrintToWindow(v0->unk_00, window, msgLoader, &msg, 72, 16, 0, 0, 0);
+
+#endif
         }
         break;
     case 6:
         if ((ov16_02269348(v2) == 1) || (v0->unk_0C == 1)) {
             switch (v0->unk_0C) {
-            case 1:  // Fight
+            case 1: // Fight
                 if (BattleSystem_BattleType(v0->unk_00) & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_PAL_PARK)) {
                     v0->unk_0A = 7;
                 }
                 break;
-            case 2: {  // Bag
+            case 2: { // Bag
                 NARC *v16 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_BG, HEAP_ID_BATTLE);
                 NARC *v17 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, HEAP_ID_BATTLE);
 
@@ -3014,7 +3057,7 @@ static void ov16_022604C8(SysTask *param0, void *param1)
                 NARC_dtor(v16);
                 NARC_dtor(v17);
             } break;
-            case 3: {  // Pokemon
+            case 3: { // Pokemon
                 NARC *v18 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_BG, HEAP_ID_BATTLE);
                 NARC *v19 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, HEAP_ID_BATTLE);
 
@@ -3026,7 +3069,7 @@ static void ov16_022604C8(SysTask *param0, void *param1)
                 NARC_dtor(v18);
                 NARC_dtor(v19);
             } break;
-            case 4: {  // Run
+            case 4: { // Run
                 NARC *v20 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_BG, HEAP_ID_BATTLE);
                 NARC *v21 = NARC_ctor(NARC_INDEX_BATTLE__GRAPHIC__PL_BATT_OBJ, HEAP_ID_BATTLE);
 
@@ -3068,6 +3111,14 @@ static void ov16_022604C8(SysTask *param0, void *param1)
         break;
     case 8:
         if (ov16_0226BCD0(v2) == 1) {
+#ifdef SINGLE_SCREEN
+            Window_EraseStandardFrame(window, 0);
+            Window_Remove(window);
+
+            G2_SetBG0Priority(1);
+            Bg_SetPriority(BG_LAYER_MAIN_1, 0);
+            Bg_SetPriority(BG_LAYER_MAIN_2, 1);
+#endif
             ov16_022656D4(v0->unk_00, v0->unk_09, v0->unk_0C);
             ClearCommand(v0->unk_00, v0->unk_09, v0->unk_08);
             Heap_Free(param1);
@@ -3176,6 +3227,12 @@ static void ov16_02260C00(SysTask *param0, void *param1)
     Healthbar *v4;
     BattlerData *v5;
 
+#ifdef SINGLE_SCREEN
+    BgConfig *bgl = BattleSystem_BGL(v0->unk_00);
+    Window *window = BattleSystem_Window(v0->unk_00, 1);
+    PaletteData *paletteSys = BattleSystem_PaletteSys(v0->unk_00);
+#endif
+
     v2 = ov16_0223E02C(v0->unk_00);
     v5 = BattleSystem_BattlerData(v0->unk_00, v0->unk_1D);
     v3 = BattleSystem_Partner(v0->unk_00, v0->unk_1D);
@@ -3225,13 +3282,55 @@ static void ov16_02260C00(SysTask *param0, void *param1)
             NARC_dtor(v11);
         }
         v0->unk_20++;
+#ifdef SINGLE_SCREEN
+        G2_SetBG0Priority(2); // this is the background + 1; could do with a constant
+        Bg_SetPriority(BG_LAYER_MAIN_1, 1);
+        Bg_SetPriority(BG_LAYER_MAIN_2, 0);
+
+        LoadStandardWindowTiles(bgl, 2, 1, 0, HEAP_ID_BATTLE);
+        PaletteData_LoadBufferFromFileStart(paletteSys, NARC_INDEX_GRAPHIC__PL_WINFRAME, GetStandardWindowPaletteNARCMember(), HEAP_ID_BATTLE, 0, 0x20, 8 * 0x10);
+        Window_Add(bgl, window, 2, 1, 0x13, 30, 4, 11, (9 + 1));
+        Window_FillTilemap(window, 0xFF);
+        Window_DrawStandardFrame(window, 0, 1, 8);
+        // GX_SetDispSelect(GX_DISP_SELECT_SUB_MAIN);
+#endif
         break;
     case 1:
+
+#ifdef SINGLE_SCREEN
+        MenuCursor *cursor;
+        cursor = BattleSystem_GetCursor(v2);
+        u8 cursorPos = cursor->x + (cursor->y << 1);
+        Window_FillRectWithColor(window, 15, (cursor->x * 96), (cursor->y << 4), 8, 16);
+        Window_FillRectWithColor(window, 15, 194, 0, 46, 32);
+#endif
         v0->unk_08 = BattleSystem_MenuInput(v2);
 
         if (v0->unk_08 != 0xffffffff) {
             Sound_PlayEffect(SEQ_SE_DP_DECIDE);
             v0->unk_20++;
+#ifdef SINGLE_SCREEN
+        } else {
+            BattleMessage msg;
+            MessageLoader *msgLoader;
+            msgLoader = BattleSystem_MessageLoader(v0->unk_00);
+            u8 cursorPosNew = cursor->x + (cursor->y << 1);
+            Window_DrawMenuCursor(window, (cursor->x * 96), (cursor->y << 4));
+
+            // if(cursorPos != cursorPosNew)
+            {
+                MoveDisplayInfo v7;
+                int i;
+                for (i = 0; i < LEARNED_MOVES_MAX; i++) {
+                    v7.move[i] = v0->unk_0C[i];
+                    v7.curPP[i] = v0->unk_14[i];
+                    v7.maxPP[i] = v0->unk_18[i];
+                }
+
+                BattleSystem_PrintMoveInfo_SS(ov16_0223E02C(v0->unk_00), v0->unk_1E, &v7, window, cursorPosNew);
+                Window_ScheduleCopyToVRAM(window);
+            }
+#endif
         }
         break;
     case 2:
@@ -3253,6 +3352,15 @@ static void ov16_02260C00(SysTask *param0, void *param1)
         v0->unk_20++;
     default:
         if (ov16_0226BCD0(v2) == 1) {
+#ifdef SINGLE_SCREEN
+            Window_EraseStandardFrame(window, 0);
+            Window_Remove(window);
+
+            G2_SetBG0Priority(1);
+            Bg_SetPriority(BG_LAYER_MAIN_1, 0);
+            Bg_SetPriority(BG_LAYER_MAIN_2, 1);
+            // GX_SetDispSelect(GX_DISP_SELECT_MAIN_SUB);
+#endif
             ov16_0223F234(v0->unk_00, 1);
             ClearCommand(v0->unk_00, v0->unk_1D, v0->unk_1C);
             Heap_Free(param1);
@@ -3531,6 +3639,9 @@ static void ov16_022611DC(SysTask *param0, void *param1)
 
     switch (v0->unk_0E) {
     case 0:
+#ifdef SINGLE_SCREEN
+        GX_SetDispSelect(GX_DISP_SELECT_SUB_MAIN);
+#endif
         v0->unk_10 = ov16_0226CD08(ov16_0223E02C(v0->unk_00));
         sub_02015738(ov16_0223E220(v0->unk_00), 1);
         PaletteData_StartFade(v1, 0x1 | 0x4, 0xc00, -8, 0, 7, 0x0);
@@ -3750,6 +3861,9 @@ static void ov16_022611DC(SysTask *param0, void *param1)
         Heap_Free(v0->unk_04);
         Heap_Free(param1);
         SysTask_Done(param0);
+#ifdef SINGLE_SCREEN
+        GX_SetDispSelect(GX_DISP_SELECT_MAIN_SUB);
+#endif
     } break;
     case 9: {
         MessageLoader *v8;
@@ -4115,13 +4229,15 @@ static void ov16_02261E8C(SysTask *param0, void *param1)
 
     switch (v0->unk_0A) {
     case 0:
+#ifdef SINGLE_SCREEN
+        GX_SetDispSelect(GX_DISP_SELECT_SUB_MAIN);
+#endif
+        {
+            Window *v2 = BattleSystem_Window(v0->unk_00, 0);
 
-    {
-        Window *v2 = BattleSystem_Window(v0->unk_00, 0);
-
-        Window_FillTilemap(v2, 0xff);
-        Window_LoadTiles(v2);
-    }
+            Window_FillTilemap(v2, 0xff);
+            Window_LoadTiles(v2);
+        }
 
         v0->unk_17 = ov16_0226CD08(ov16_0223E02C(v0->unk_00));
         sub_02015738(ov16_0223E220(v0->unk_00), 1);
@@ -4255,6 +4371,9 @@ static void ov16_02261E8C(SysTask *param0, void *param1)
             Heap_Free(v0->unk_04);
             Heap_Free(param1);
             SysTask_Done(param0);
+#ifdef SINGLE_SCREEN
+            GX_SetDispSelect(GX_DISP_SELECT_MAIN_SUB);
+#endif
         }
         break;
     }

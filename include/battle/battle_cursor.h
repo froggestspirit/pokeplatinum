@@ -34,4 +34,15 @@ void ov16_0226CD10(UnkStruct_ov16_02268A14 *param0, int param1);
 void ov16_0226CEB0(UnkStruct_ov16_02268A14 *param0, int param1);
 u8 ov16_0226D088(UnkStruct_ov16_02268A14 *param0);
 
+#ifdef SINGLE_SCREEN
+typedef struct { // Moved from the c file for SINGLE_SCREEN
+    u8 unk_00;
+    s8 y;
+    s8 x;
+    u8 unk_03;
+} MenuCursor;
+MenuCursor *BattleSystem_GetCursor(UnkStruct_ov16_02268A14 *param0);
+void BattleSystem_PrintMoveInfo_SS(UnkStruct_ov16_02268A14 *param0, int param1, const MoveDisplayInfo *param2, Window *window, u8 cursorPos);
+#endif
+
 #endif // POKEPLATINUM_OV16_0226871C_H

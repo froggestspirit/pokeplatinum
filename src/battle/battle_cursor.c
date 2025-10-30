@@ -164,12 +164,14 @@ typedef struct {
     u8 unk_08;
 } UnkStruct_ov16_02268FCC;
 
+#ifndef SINGLE_SCREEN // Move to the header file for SINGLE_SCREEN
 typedef struct {
     u8 unk_00;
     s8 y;
     s8 x;
     u8 unk_03;
 } MenuCursor;
+#endif
 
 typedef union {
     UnkStruct_ov16_02269668 val1;
@@ -491,12 +493,17 @@ __attribute__((aligned(4))) static const u8 Unk_ov16_02270A08[NELEMS(Unk_ov16_02
     0x3,
     0x4
 };
-
+#ifdef SINGLE_SCREEN
+__attribute__((aligned(4))) static const u8 battleMenuButtonLayout[2][2] = {
+    { 0x0, 0x1 },
+    { 0x2, 0x3 }
+};
+#else
 __attribute__((aligned(4))) static const u8 battleMenuButtonLayout[2][3] = {
     { 0x0, 0x0, 0x0 },
     { 0x1, 0x3, 0x2 }
 };
-
+#endif
 static const TouchScreenRect Unk_ov16_02270214[] = {
     { 0x18, 0x90, 0x0, 0xFF },
     { 0xFF, 0x0, 0x0, 0x0 }
@@ -547,13 +554,18 @@ __attribute__((aligned(4))) static const u8 Unk_ov16_02270A14[NELEMS(Unk_ov16_02
     0xA,
     0xB
 };
-
+#ifdef SINGLE_SCREEN
+__attribute__((aligned(4))) static const u8 moveMenuButtonLayout[2][2] = {
+    { 0x1, 0x2 },
+    { 0x3, 0x4 }
+};
+#else
 __attribute__((aligned(4))) static const u8 moveMenuButtonLayout[3][2] = {
     { 0x1, 0x2 },
     { 0x3, 0x4 },
     { 0x0, 0x0 }
 };
-
+#endif
 static const TouchScreenRect Unk_ov16_0227024C[] = {
     { 0x28, 0x60, 0x8, 0xF8 },
     { 0x70, 0xA8, 0x8, 0xF8 },
@@ -619,7 +631,8 @@ __attribute__((aligned(4))) static const u8 Unk_ov16_022701C4[NELEMS(Unk_ov16_02
     0x4
 };
 
-static const UnkStruct_ov16_02270670 Unk_ov16_02270670[] = {  // Menu structures
+static const UnkStruct_ov16_02270670 Unk_ov16_02270670[] = {
+    // Menu structures
     {
         0x1C,
         0xF2,
@@ -1588,7 +1601,12 @@ void ov16_02269218(UnkStruct_ov16_02268A14 *param0)
         Sprite_SetDrawFlag2(param0->unk_5D4[i]->sprite, 0);
     }
 }
-
+#ifdef SINGLE_SCREEN
+MenuCursor *BattleSystem_GetCursor(UnkStruct_ov16_02268A14 *param0)
+{
+    return &param0->cursor;
+}
+#endif
 int BattleSystem_MenuInput(UnkStruct_ov16_02268A14 *param0)
 {
     int v0, v1, v2, v3;
@@ -1610,7 +1628,7 @@ int BattleSystem_MenuInput(UnkStruct_ov16_02268A14 *param0)
     } else {
         v1 = TouchScreen_CheckRectanglePressed(v4->unk_14);
 
-        if (v1 == 0xffffffff) {  // Nothing was selected with touch
+        if (v1 == 0xffffffff) { // Nothing was selected with touch
             v1 = BattleSystem_MenuKeys(param0);
             v5++;
         }
@@ -2799,18 +2817,18 @@ void ov16_0226AC98(UnkStruct_ov16_02268A14 *param0, int param1, const MoveDispla
     void *v1;
     NNSG2dCharacterData *v2;
     int i, v3, v5;
-    Strbuf *v6;
-    Strbuf *v7;
+    Strbuf *textMove;
+    Strbuf *textPP;
     Strbuf *v8;
-    Strbuf *v9;
+    Strbuf *textPPText;
     StringTemplate *v10;
-    TextColor v11;
+    TextColor textColor;
     MessageLoader *v12 = BattleSystem_MessageLoader(param0->battleSys);
     v0 = ov16_0226ABD4(param0, param1);
     v3 = sub_0208C098(6);
-    v9 = MessageLoader_GetNewStrbuf(v12, 938);
+    textPPText = MessageLoader_GetNewStrbuf(v12, 938);
     v10 = BattleSystem_StringTemplate(param0->battleSys);
-    v7 = Strbuf_Init((2 + 2 + 1 + 2) * 2 + 2, HEAP_ID_BATTLE);
+    textPP = Strbuf_Init((2 + 2 + 1 + 2) * 2 + 2, HEAP_ID_BATTLE);
     v8 = MessageLoader_GetNewStrbuf(v12, 937);
 
     for (i = 0; i < LEARNED_MOVES_MAX; i++) {
@@ -2822,40 +2840,98 @@ void ov16_0226AC98(UnkStruct_ov16_02268A14 *param0, int param1, const MoveDispla
         }
 
         if ((v0->unk_28[i].unk_00.pixels == NULL) || ((param2->move[i] != v0->unk_00.move[i]) && (param2->move[i] != 0))) {
-            v6 = MessageUtil_MoveName(param2->move[i], HEAP_ID_BATTLE);
-            ov16_0226AEA0(param0, v6, FONT_SUBSCREEN, &v0->unk_28[i], TEXT_COLOR(7, 8, 9));
-            Strbuf_Free(v6);
+            textMove = MessageUtil_MoveName(param2->move[i], HEAP_ID_BATTLE);
+            ov16_0226AEA0(param0, textMove, FONT_SUBSCREEN, &v0->unk_28[i], TEXT_COLOR(7, 8, 9));
+            Strbuf_Free(textMove);
         }
 
         if ((v0->unk_78[i].unk_00.pixels == NULL) || (v0->unk_C8[i].unk_00.pixels == NULL) || (param2->move[i] != 0) || (param2->move[i] != v0->unk_00.move[i]) || (param2->curPP[i] != v0->unk_00.curPP[i]) || (param2->maxPP[i] != v0->unk_00.maxPP[i])) {
             StringTemplate_SetNumber(v10, 0, param2->curPP[i], 2, 1, 0);
             StringTemplate_SetNumber(v10, 1, param2->maxPP[i], 2, 1, 0);
-            StringTemplate_Format(v10, v7, v8);
+            StringTemplate_Format(v10, textPP, v8);
 
-            v11 = ov16_0226B924(param2->curPP[i], param2->maxPP[i]);
+            textColor = ov16_0226B924(param2->curPP[i], param2->maxPP[i]);
 
             if ((v0->unk_78[i].unk_00.pixels == NULL) || (param2->move[i] != v0->unk_00.move[i]) || (param2->curPP[i] != v0->unk_00.curPP[i])) {
-                ov16_0226AEA0(param0, v7, FONT_SYSTEM, &v0->unk_78[i], v11);
+                ov16_0226AEA0(param0, textPP, FONT_SYSTEM, &v0->unk_78[i], textColor);
             }
 
             if ((v0->unk_C8[i].unk_00.pixels == NULL) || (param2->move[i] != v0->unk_00.move[i]) || (param2->curPP[i] != v0->unk_00.curPP[i])) {
-                ov16_0226AEA0(param0, v9, FONT_SYSTEM, &v0->unk_C8[i], v11);
+                ov16_0226AEA0(param0, textPPText, FONT_SYSTEM, &v0->unk_C8[i], textColor);
             }
         }
     }
 
-    Strbuf_Free(v9);
+    Strbuf_Free(textPPText);
     Strbuf_Free(v8);
-    Strbuf_Free(v7);
+    Strbuf_Free(textPP);
 
     v0->unk_00 = *param2;
 }
 
-static void ov16_0226AEA0(UnkStruct_ov16_02268A14 *param0, const Strbuf *param1, enum Font param2, UnkStruct_ov16_0226AEA0 *param3, TextColor param4)
+#ifdef SINGLE_SCREEN
+void BattleSystem_PrintMoveInfo_SS(UnkStruct_ov16_02268A14 *param0, int param1, const MoveDisplayInfo *param2, Window *window, u8 cursorPos)
+{
+    UnkStruct_ov16_0226ABD4 *v0;
+    int i;
+    Strbuf *textMove;
+    Strbuf *textPP;
+    Strbuf *v8;
+    Strbuf *textPPText;
+    StringTemplate *v10;
+    TextColor textColor;
+    MessageLoader *v12 = BattleSystem_MessageLoader(param0->battleSys);
+    v0 = ov16_0226ABD4(param0, param1);
+    textPPText = MessageLoader_GetNewStrbuf(v12, 938);
+    v10 = BattleSystem_StringTemplate(param0->battleSys);
+    textPP = Strbuf_Init((2 + 2 + 1 + 2) * 2 + 2, HEAP_ID_BATTLE);
+    v8 = MessageLoader_GetNewStrbuf(v12, 937);
+
+    int x, y;
+    x = 6;
+    y = 0;
+
+    for (i = 0; i < LEARNED_MOVES_MAX; i++) {
+        textMove = MessageUtil_MoveName(param2->move[i], HEAP_ID_BATTLE);
+        Text_AddPrinterWithParams(window, FONT_SYSTEM, textMove, x, y, TEXT_SPEED_NO_TRANSFER, NULL);
+        Strbuf_Free(textMove);
+
+        if (i & 1) {
+            x -= 96;
+            y += 16;
+        } else {
+            x += 96;
+        }
+    }
+
+    if ((cursorPos < LEARNED_MOVES_MAX) && (param2->move[cursorPos] != 0)) {
+        StringTemplate_SetNumber(v10, 0, param2->curPP[cursorPos], 2, 1, 0);
+        StringTemplate_SetNumber(v10, 1, param2->maxPP[cursorPos], 2, 1, 0);
+        StringTemplate_Format(v10, textPP, v8);
+
+        textColor = ov16_0226B924(param2->curPP[cursorPos], param2->maxPP[cursorPos]);
+        Text_AddPrinterWithParamsAndColor(window, FONT_SYSTEM, textPP, 206, 16, TEXT_SPEED_NO_TRANSFER, textColor, NULL);
+        Text_AddPrinterWithParams(window, FONT_SYSTEM, textPPText, 194, 16, TEXT_SPEED_NO_TRANSFER, NULL);
+
+        if ((v0->unk_78[i].unk_00.pixels == NULL) || (param2->move[i] != v0->unk_00.move[i]) || (param2->curPP[i] != v0->unk_00.curPP[i])) {
+            // ov16_0226AEA0(param0, textPP, FONT_SYSTEM, &v0->unk_78[i], textColor);
+        }
+
+        if ((v0->unk_C8[i].unk_00.pixels == NULL) || (param2->move[i] != v0->unk_00.move[i]) || (param2->curPP[i] != v0->unk_00.curPP[i])) {
+            // ov16_0226AEA0(param0, textPPText, FONT_SYSTEM, &v0->unk_C8[i], textColor);
+        }
+    }
+
+    Strbuf_Free(textPPText);
+    Strbuf_Free(v8);
+    Strbuf_Free(textPP);
+}
+#endif
+static void ov16_0226AEA0(UnkStruct_ov16_02268A14 *param0, const Strbuf *text, enum Font font, UnkStruct_ov16_0226AEA0 *param3, TextColor textColor)
 {
     int v0, v1;
 
-    ov16_0226A95C(param1, param2, &v0, &v1);
+    ov16_0226A95C(text, font, &v0, &v1);
 
     param3->unk_12 = v0;
     param3->unk_10 = v1;
@@ -2866,7 +2942,7 @@ static void ov16_0226AEA0(UnkStruct_ov16_02268A14 *param0, const Strbuf *param1,
 
     Window_Init(&param3->unk_00);
     Window_AddToTopLeftCorner(BattleSystem_BGL(param0->battleSys), &param3->unk_00, v1, 16 / 8, 0, 0);
-    Text_AddPrinterWithParamsColorAndSpacing(&param3->unk_00, param2, param1, 0, 0, TEXT_SPEED_NO_TRANSFER, param4, 0, 0, NULL);
+    Text_AddPrinterWithParamsColorAndSpacing(&param3->unk_00, font, text, 0, 0, TEXT_SPEED_NO_TRANSFER, textColor, 0, 0, NULL);
 }
 
 static void DrawMoveTypeIcons(UnkStruct_ov16_02268A14 *param0)
@@ -3794,14 +3870,18 @@ static int BattleSystem_MenuKeys(UnkStruct_ov16_02268A14 *param0)
         return 0xffffffff;
     }
 
-    if (cursor->unk_00 == 0) {  // Check if the cursor is inactive
+    if (cursor->unk_00 == 0) { // Check if the cursor is inactive
+#ifdef SINGLE_SCREEN
+        cursor->unk_00 = 1; // Activate the cursor
+        return v1->unk_20(param0, 1);
+#endif
         if ((param0->unk_6C0 == 1) || (gSystem.pressedKeys & (PAD_BUTTON_A | PAD_BUTTON_B | PAD_BUTTON_X | PAD_BUTTON_Y | PAD_KEY_RIGHT | PAD_KEY_LEFT | PAD_KEY_UP | PAD_KEY_DOWN))) {
-            if (param0->unk_6C0 == 0) {  // If a key was pressed, play sfx
+            if (param0->unk_6C0 == 0) { // If a key was pressed, play sfx
                 Sound_PlayEffect(SEQ_SE_CONFIRM);
             }
 
-            cursor->unk_00 = 1;  // Activate the cursor
-            param0->unk_6C0 = 0;  // Unpress the key
+            cursor->unk_00 = 1; // Activate the cursor
+            param0->unk_6C0 = 0; // Unpress the key
             v1->unk_20(param0, 1);
         }
 
@@ -3835,24 +3915,27 @@ static int BattleSystem_Cursor_Menu(UnkStruct_ov16_02268A14 *param0, int cursorH
 
     switch (param0->unk_66B) {
     case 6:
-    case 5:  // fight menus where bag, run and pokemon aren't available
+    case 5: // fight menus where bag, run and pokemon aren't available
         button = BattleSystem_MoveCursor(cursor, 1, 1, battleMenuButtonLayout[0]);
         break;
-    default:  // normal fight menu, with bag, run and pokemon
+    default: // normal fight menu, with bag, run and pokemon
         buttonId = battleMenuButtonLayout[cursor->y][cursor->x];
-
+#ifdef SINGLE_SCREEN
+        button = BattleSystem_MoveCursor(cursor, 2, 2, battleMenuButtonLayout[0]);
+        break;
+#endif
         if ((buttonId == 3) && (gSystem.pressedKeys & PAD_KEY_UP)) {
-            (void)0;  // Do nothing if run is selected and up is pressed
+            (void)0; // Do nothing if run is selected and up is pressed
         } else {
-            button = BattleSystem_MoveCursor(cursor, 3, 2, battleMenuButtonLayout[0]);  // temporarily set button to the id of the new button
+            button = BattleSystem_MoveCursor(cursor, 3, 2, battleMenuButtonLayout[0]); // temporarily set button to the id of the new button
 
-            if ((button == 0) && (buttonId == 0)) {  // if fight is selected, and is still selected
-                if (gSystem.pressedKeys & PAD_KEY_LEFT) {  // Move to bag on the bottom row
+            if ((button == 0) && (buttonId == 0)) { // if fight is selected, and is still selected
+                if (gSystem.pressedKeys & PAD_KEY_LEFT) { // Move to bag on the bottom row
                     cursor->x = 0;
                     cursor->y = 1;
                     Sound_PlayEffect(SEQ_SE_CONFIRM);
                     button = PAD_KEY_LEFT;
-                } else if (gSystem.pressedKeys & PAD_KEY_RIGHT) {  // Move to pokemon on the bottom row
+                } else if (gSystem.pressedKeys & PAD_KEY_RIGHT) { // Move to pokemon on the bottom row
                     cursor->x = 2;
                     cursor->y = 1;
                     Sound_PlayEffect(SEQ_SE_CONFIRM);
@@ -3976,9 +4059,13 @@ static int BattleSystem_Cursor_Moves(UnkStruct_ov16_02268A14 *param0, int cursor
         BattleSystem_DrawCursor(param0->unk_6B8, v2->unk_14[v3].rect.left + 8, v2->unk_14[v3].rect.right - 8, v2->unk_14[v3].rect.top + 8, v2->unk_14[v3].rect.bottom - 8, (192 + 80) << FX32_SHIFT);
         return 0xffffffff;
     }
-
+#ifdef SINGLE_SCREEN
+    MI_CpuCopy8(moveMenuButtonLayout, v5, 2 * 2);
+    v1 = BattleSystem_MoveCursor(cursor, 2, 2, v5[0]);
+#else
     MI_CpuCopy8(moveMenuButtonLayout, v5, 3 * 2);
     v1 = BattleSystem_MoveCursor(cursor, 2, 3, v5[0]);
+#endif
 
     switch (v1) {
     case PAD_KEY_UP:
@@ -4014,8 +4101,11 @@ static void ov16_0226C378(UnkStruct_ov16_02268A14 *param0, int param1)
 
     v1 = BattleSystem_BattlerOfType(param0->battleSys, param0->unk_66A);
     v0 = ov16_02263B0C(BattleSystem_BattlerData(param0->battleSys, v1));
-
+#ifdef SINGLE_SCREEN
+    for (i = 0; i < 2; i++) {
+#else
     for (i = 0; i < 3; i++) {
+#endif
         for (j = 0; j < 2; j++) {
             if (param1 == moveMenuButtonLayout[i][j]) {
                 v0->unk_02 = j;
